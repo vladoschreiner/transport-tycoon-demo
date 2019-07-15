@@ -112,6 +112,6 @@ OpenTTD is licensed under GPL 2. See [more](https://github.com/OpenTTD/OpenTTD/#
 
 ## Versions used
 
-OpenTTD 1.9.2
-Hazelcast C++ client 3.11
-Hazelcast Jet 3.1
+* [OpenTTD 1.9.2](https://github.com/OpenTTD/OpenTTD/tree/1.9.2)
+* [Hazelcast C++ client 3.11](https://hazelcast.org/clients/cplusplus/)
+* [Hazelcast Jet 3.1](https://jet.hazelcast.org/download/)
