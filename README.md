@@ -104,7 +104,7 @@ Load the game position from `game-positions/demo1.sav`. Start all deployed train
 
 ## Licensing
 
-This demo is licensed under Apache 2 license
+This demo is licensed under GPL 2 license
 
 Hazelcast Jet and Hazelcast C++ client are licensed under Apache 2 license
 
