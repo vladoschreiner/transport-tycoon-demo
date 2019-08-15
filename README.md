@@ -38,7 +38,7 @@ The message buffer is consumed by the analytical job residing in the Hazelcast J
 
 This happens each 50 milliseconds. Higher resolution isn't possible as the frequency of the vehicle data is just 30 Hz (vehicle position update arrives each 30-40 millisecond for each vehicle).
 
-The analytical job is implemented using the [Pipeline API](https://docs.hazelcast.org/docs/jet/latest/manual/#pipeline-api) of Hazelcast Jet (see [the code](../../blob/master/vehicle-telemetry-analytics/src/main/java/CollisionDetector.java#L37)).
+The analytical job is implemented using the [Pipeline API](https://docs.hazelcast.org/docs/jet/latest/manual/#pipeline-api) of Hazelcast Jet (see [the code](../../blob/master/vehicle-telemetry-analytics/src/main/java/biz/schr/impl/CollisionDetector.java#L37)).
 
 If a collision is detected, it's recorded to a K-V store in Hazelcast Jet. This store allows an event-driven programming. Storing new collision triggers an event that is delivered to the C++ client in OpenTTD. OpenTTD can stop the affected vehicles.
 
