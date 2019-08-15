@@ -33,7 +33,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>JetStarter</mainClass>
+                            <mainClass>biz.schr.StartJet</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -47,12 +47,10 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>JetStarter</mainClass>
-                </configuration>
             </plugin>
         </plugins>
     </build>

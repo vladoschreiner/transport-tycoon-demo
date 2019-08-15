@@ -1,7 +1,7 @@
+package biz.schr.impl;
+
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.internal.json.JsonValue;
-import com.hazelcast.map.journal.EventJournalMapEvent;
 
 import java.io.Serializable;
 import java.util.Map;

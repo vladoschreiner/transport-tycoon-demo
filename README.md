@@ -84,11 +84,11 @@ To build OpenTTD, please follow the [Compiling instructions](https://github.com/
 
 ## Running the Application
 
-Start the Vehicle Telemetry Analytics jobs:
+Start Jet (Collision Detection is disabled now):
 
 ```
 cd vehicle-telemetry-analytics
-mvn exec:java
+mvn exec:java -Dexec.mainClass="biz.schr.StartJet"
 ```
 
 Start OpenTTD:
@@ -97,9 +97,21 @@ cd openttd/bin
 ./openttd
 ```
 
-Load the game position from `game-positions/demo1.sav`. Start all deployed trains by hitting the green flag from the train overview window and let Jet save some lifes.
+Load the game position from `game-positions/demo1.sav`. Start all deployed trains by hitting the green flag from the train overview window and see the tragedy.
 
 ![Pipeline](/images/start-trains.png)
+
+Start the collision detector within Jet:
+
+```
+cd vehicle-telemetry-analytics
+mvn exec:java -Dexec.mainClass="biz.schr.StartCollisionDetector"
+```
+
+Reload game position, launch trains and let Jet save some lifes.
+
+
+
 
 
 ## Licensing

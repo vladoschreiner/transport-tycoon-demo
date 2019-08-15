@@ -1,3 +1,6 @@
+package biz.schr.impl;
+
+import biz.schr.Constants;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
@@ -15,7 +18,8 @@ public class IngestionMonitor {
 
     private static Pipeline buildPipeline() {
         Pipeline p = Pipeline.create();
-        p.drawFrom(Sources.<String, String>mapJournal(JetStarter.INPUT_MAP_NAME, JournalInitialPosition.START_FROM_CURRENT))
+        p.drawFrom(Sources.<String, String>mapJournal(Constants.INPUT_MAP_NAME,
+                        JournalInitialPosition.START_FROM_CURRENT))
                 .withoutTimestamps().setName("Stream from buffer")
                 .map( e -> VehiclePosition.parse(e)).setName("Parse JSON")
                 .addTimestamps(v -> v.timestamp, 0)
