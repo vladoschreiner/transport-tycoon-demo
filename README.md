@@ -57,7 +57,7 @@ Fault-tolerance using in-memory replication.
 
 ## Structure
 
-`openttd` directory contains a fork of OpenTTD 1.9.2 source code extended with Hazelcast 3.11 C++ client to export the data and handle the collision events
+`openttd` directory contains a fork of OpenTTD 1.9.2 source code extended with Hazelcast 3.11 C++ client to export the data and handle the collision events. See the `openttd/src/log_events.h` and `openttd/src/log_events.cpp` for the Hazelcast integration.
 
 `vehicle-telemetry-analytics` contains the messaging and the analytical infrastructure: input message buffer, stream processing cluster with the analytical job, K-V store for the detected collisions
 
