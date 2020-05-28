@@ -19,5 +19,5 @@ public class Constants {
     public static final long PREDICTION_INTERVAL_MS = 50;
 
     // when vehicles are in square of this size they are colliding
-    public static final Integer COLLISION_COORDINATE_RESOLUTION = 20;
+    public static final Double COLLISION_COORDINATE_RESOLUTION = 20.0;
 }

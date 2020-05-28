@@ -27,7 +27,7 @@ public class VehiclePosition implements Serializable {
         v.name = event.getKey();
         v.xPos = vehicleJsonObject.get("X position").asInt();
         v.yPos = vehicleJsonObject.get("Y position").asInt();
-        v.timestamp = Long.valueOf(vehicleJsonObject.get("TimeStamp").asString());
+        v.timestamp = Long.parseLong(vehicleJsonObject.get("TimeStamp").asString());
 
         return v;
     }
