@@ -1,37 +1,51 @@
 package biz.schr.impl;
 
-import com.hazelcast.internal.json.Json;
-import com.hazelcast.internal.json.JsonObject;
-
 import java.io.Serializable;
-import java.util.Map;
 
 public class VehiclePosition implements Serializable {
 
-    public String name;
-
-    public int xPos;
-
-    public int yPos;
-
-    public long timestamp;
-
-    /**
-     * Parses JSON into VehiclePosition object
-     * @return
-     */
-    public static VehiclePosition parse(Map.Entry<String, String> event) {
-        JsonObject vehicleJsonObject  = Json.parse(event.getValue()).asObject();
-
-        VehiclePosition v = new VehiclePosition();
-        v.name = event.getKey();
-        v.xPos = vehicleJsonObject.get("X position").asInt();
-        v.yPos = vehicleJsonObject.get("Y position").asInt();
-        v.timestamp = Long.valueOf(vehicleJsonObject.get("TimeStamp").asString());
-
-        return v;
+    public VehiclePosition() {
     }
 
+    private String name;
+
+    private int xPos;
+
+    private int yPos;
+
+    private long timestamp;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getxPos() {
+        return xPos;
+    }
+
+    public void setxPos(int xPos) {
+        this.xPos = xPos;
+    }
+
+    public int getyPos() {
+        return yPos;
+    }
+
+    public void setyPos(int yPos) {
+        this.yPos = yPos;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     @Override
     public String toString() {

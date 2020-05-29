@@ -14,14 +14,13 @@ public class StartJet {
         JetConfig jc = JetConfig.loadDefault();
 
         jc.getHazelcastConfig().setProperty("hazelcast.partition.count", "1");
-
-        jc.getHazelcastConfig().addEventJournalConfig( new EventJournalConfig()
-                .setMapName(Constants.INPUT_MAP_NAME)
-                .setEnabled(true)
-                .setCapacity(100_000)
-                .setTimeToLiveSeconds(0));
-
-        jc.getHazelcastConfig().addMapConfig( new MapConfig()
+        jc.getHazelcastConfig().addMapConfig(new MapConfig()
+                .setName(Constants.INPUT_MAP_NAME)
+                .setEventJournalConfig(new EventJournalConfig()
+                        .setEnabled(true)
+                        .setCapacity(100_000)
+                        .setTimeToLiveSeconds(0)));
+        jc.getHazelcastConfig().addMapConfig(new MapConfig()
                 .setName(Constants.PREDICTION_MAP_NAME)
                 .setTimeToLiveSeconds(Constants.PREDICTION_TTL_SECS)
         );
@@ -32,13 +31,11 @@ public class StartJet {
         // jc.getMetricsConfig().setEnabled(true).setJmxEnabled(true);
         // jc.getMetricsConfig().setMetricsForDataStructuresEnabled(true);
 
-        JetInstance jet  = Jet.newJetInstance(jc);
+        JetInstance jet = Jet.newJetInstance(jc);
 
         IngestionMonitor.start(jet);
 
     }
-
-
 
 
 }

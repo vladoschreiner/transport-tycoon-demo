@@ -7,13 +7,24 @@
     <groupId>org.schr</groupId>
     <artifactId>vehicle-telemetry-analytics</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <repositories>
+        <repository>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+        </repository>
+    </repositories>
 
 
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
             <artifactId>hazelcast-jet</artifactId>
-            <version>3.1</version>
+            <version>4.2-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
