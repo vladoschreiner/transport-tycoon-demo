@@ -13,8 +13,9 @@ import com.hazelcast.map.listener.EntryAddedListener;
 
 import java.util.AbstractMap;
 
-public class CollisionDetector {
+import static com.hazelcast.jet.json.JsonUtil.beanFrom;
 
+public class CollisionDetector {
 
     public static void start(JetInstance jet) {
         jet.newJob(buildPipeline(), new JobConfig().setName("Collision detector")).join();
@@ -27,15 +28,13 @@ public class CollisionDetector {
     private static Pipeline buildPipeline() {
         
         Pipeline p = Pipeline.create();
-
         p.readFrom(Sources.<String, String>mapJournal(Constants.INPUT_MAP_NAME, JournalInitialPosition.START_FROM_CURRENT))
-                .withoutTimestamps().setName("Stream from buffer")
-                .map(e -> VehiclePosition.parse(e)).setName("Parse JSON")
-                .addTimestamps(v -> v.timestamp, 0)
-
-                .groupingKey(vehiclePosition -> vehiclePosition.name)
-                .window(WindowDefinition.sliding(Constants.PREDICT_POSITION_IN_MS, Constants.PREDICTION_INTERVAL_MS))
-                .aggregate(AggregateOperations.allOf(
+         .withoutTimestamps().setName("Stream from buffer")
+         .map(entry -> beanFrom(entry.getValue(), VehiclePosition.class)).setName("Parse JSON")
+         .addTimestamps(v -> v.timestamp, 0)
+         .groupingKey(vehiclePosition -> vehiclePosition.name)
+         .window(WindowDefinition.sliding(Constants.PREDICT_POSITION_IN_MS, Constants.PREDICTION_INTERVAL_MS))
+         .aggregate(AggregateOperations.allOf(
                         AggregateOperations.minBy(ComparatorEx.comparingLong(e -> e.timestamp)),
                         AggregateOperations.maxBy(ComparatorEx.comparingLong(e -> e.timestamp)),
                         (earliest, latest) -> Tuple2.tuple2(
@@ -44,24 +43,24 @@ public class CollisionDetector {
                         )
                 )).setName("Predict position")
 
-                // for each vehicle we have predicted position in now + PREDICT_POSITION_IN_MS
+         // for each vehicle we have predicted position in now + PREDICT_POSITION_IN_MS
 
-                // group together items with the same predicted position
-                // more coarse grained resolution (bigger "squares")
-                .groupingKey( r -> Math.round(r.getValue().f0() / Constants.COLLISION_COORDINATE_RESOLUTION) +
+         // group together items with the same predicted position
+         // more coarse grained resolution (bigger "squares")
+         .groupingKey( r -> Math.round(r.getValue().f0() / Constants.COLLISION_COORDINATE_RESOLUTION) +
                         "_" + Math.round(r.getValue().f1() / Constants.COLLISION_COORDINATE_RESOLUTION))
 
-                // for each update interval, check vehicles that are in the same square
-                .window(WindowDefinition.tumbling(Constants.PREDICTION_INTERVAL_MS))
-                .aggregate(AggregateOperations.toList()).setName("Group co-located predictions")
+         // for each update interval, check vehicles that are in the same square
+         .window(WindowDefinition.tumbling(Constants.PREDICTION_INTERVAL_MS))
+         .aggregate(AggregateOperations.toList()).setName("Group co-located predictions")
 
-                /// if there is more than 1 vehicle in the square predict the collision!
-                .filter(l -> l.getValue().size() > 1).setName("Filter non-colliding")
+         /// if there is more than 1 vehicle in the square predict the collision!
+         .filter(l -> l.getValue().size() > 1).setName("Filter non-colliding")
 
-                // put vehicles to the collision map. Short TTL - the prediction is relevant just before the collision happens
-                .flatMap(l -> Traversers.traverseIterator(l.getValue().iterator() ) )
-                .map( i -> new AbstractMap.SimpleEntry<String, String>(i.getKey(), i.getKey()))
-                .writeTo(Sinks.map(Constants.PREDICTION_MAP_NAME)).setName("Save collisions to IMap");
+         // put vehicles to the collision map. Short TTL - the prediction is relevant just before the collision happens
+         .flatMap(l -> Traversers.traverseIterator(l.getValue().iterator() ) )
+         .map( i -> new AbstractMap.SimpleEntry<String, String>(i.getKey(), i.getKey()))
+         .writeTo(Sinks.map(Constants.PREDICTION_MAP_NAME)).setName("Save collisions to IMap");
         return p;
     }
 
