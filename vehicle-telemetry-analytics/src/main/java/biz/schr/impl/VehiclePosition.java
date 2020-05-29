@@ -4,13 +4,48 @@ import java.io.Serializable;
 
 public class VehiclePosition implements Serializable {
 
-    public String name;
+    public VehiclePosition() {
+    }
 
-    public int xPos;
+    private String name;
 
-    public int yPos;
+    private int xPos;
 
-    public long timestamp;
+    private int yPos;
+
+    private long timestamp;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getxPos() {
+        return xPos;
+    }
+
+    public void setxPos(int xPos) {
+        this.xPos = xPos;
+    }
+
+    public int getyPos() {
+        return yPos;
+    }
+
+    public void setyPos(int yPos) {
+        this.yPos = yPos;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     @Override
     public String toString() {
