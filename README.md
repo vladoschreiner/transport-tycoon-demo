@@ -80,6 +80,8 @@ cd vehicle-telemetry-analytics
 mvn clean package
 ```
 
+Install Hazelcast C++ client to your system.
+
 To build OpenTTD, please follow the [Compiling instructions](https://github.com/OpenTTD/OpenTTD/#70-compiling). For troubleshooting, please follow the [Compiling OpenTTD guide](https://wiki.openttd.org/Compiling).
 
 ## Running the Application

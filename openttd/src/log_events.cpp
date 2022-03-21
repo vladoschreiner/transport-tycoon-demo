@@ -11,7 +11,7 @@
 #include <cstddef>
 #include "log_events.h"
 #include <ctime>
-#include <hazelcast/client/HazelcastClient.h>
+#include <hazelcast/client/hazelcast_client.h>
 #include "map_func.h"
 #include <chrono>
 
@@ -24,18 +24,46 @@ using namespace hazelcast::util;
  * Initiates position to Hazelcast cluster using Hazelcast C++ client
  * @See https://github.com/hazelcast/hazelcast-cpp-client
  */
-boost::shared_ptr<HazelcastClient> JetResources::newClient() {
+std::shared_ptr<hazelcast_client> JetResources::newClient() {
 
-    ClientConfig config;
-    config.getGroupConfig().setName("jet");
-    config.getGroupConfig().setPassword("jet-pass");
+    //ClientConfig config;
+    //config.getGroupConfig().setName("jet");
+    //config.getGroupConfig().setPassword("jet-pass");
 
-    boost::shared_ptr<HazelcastClient> client(new HazelcastClient(config));
-    IMap<std::string, std::string> map = client->getMap<std::string, std::string>(JET_PREDICTION_MAP_NAME);
-    map.addEntryListener(listener, true);
+    //auto hz = hazelcast::new_client().get();
 
+    //boost::shared_ptr<hazelcast_client> client( hazelcast::new_client().get());
+//    IMap<std::string, std::string> map = client->getMap<std::string, std::string>(JET_PREDICTION_MAP_NAME);
+//    map.addEntryListener(listener, true);
+
+
+
+    client_config config;
+    config.set_cluster_name("jet");
+    config.set_credentials(std::make_shared<hazelcast::client::security::username_password_credentials>("", "jet-pass"));
+    
+    auto client = make_shared<hazelcast_client>(hazelcast::new_client(std::move(config)).get());
+
+
+/*
+    boost::shared_ptr<hazelcast_client> client(hazelcast::new_client(std::move(config)).get());
+
+    auto map = client.get_map(JET_PREDICTION_MAP_NAME).get();
+    hazelcast::client::entry_listener hazelcast::client::entry_listener()
+    auto listener = hazelcast::client::entry_listener()
+            .on_added([](hazelcast::client::entry_event&& event) {
+                std::cout << "[added] " << event << std::endl;
+            });
+    map->add_entry_listener(std::move(listener), true).get(); */
     return client;
 }
+
+
+    
+
+
+
+
 
 /**
  * Name of the remote data structure used for input. 
@@ -50,8 +78,8 @@ std::string JetResources::JET_INPUT_MAP_NAME("openttd-events");
  */
 std::string JetResources::JET_PREDICTION_MAP_NAME("openttd-predictions");
 
-boost::shared_ptr<HazelcastClient> JetResources::jetClient = JetResources::newClient();
-JetResources::JetListener JetResources::listener;
+std::shared_ptr<hazelcast_client> JetResources::jetClient = JetResources::newClient();
+//JetResources::JetListener JetResources::listener;
 
 
 
@@ -79,8 +107,11 @@ bool LogVehicleEvent(Vehicle *v) {
 	message = message + "}";
 
 	// Stream message to Hazelcast Jet server
-	IMap<std::string, std::string> jetMap = JetResources::getJetInputMap();
-	jetMap.put(name, message);	
+	//imap<std::string, std::string> jetMap = JetResources::getJetInputMap();
+	//jetMap->put(name, message).get();	
+
+	auto jetMap = JetResources::getJetInputMap();
+	jetMap->put<std::string, std::string>(name, message).get();
 
 	return true;
 

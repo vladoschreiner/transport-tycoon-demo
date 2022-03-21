@@ -10,7 +10,7 @@
 #include "townname_func.h"
 // #include <iostream>
 // #include <fstream>
-#include <hazelcast/client/HazelcastClient.h>
+#include <hazelcast/client/hazelcast_client.h>
 #include <cstddef>
 #include <string>
 
@@ -39,6 +39,7 @@ bool ShallTrainStop(Vehicle *v);
 class JetResources {
 public:
 
+/*
     class JetListener : public EntryListener<std::string, std::string> {
     public:
         virtual void entryAdded(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
@@ -104,24 +105,24 @@ public:
 
         virtual void mapCleared(const hazelcast::client::MapEvent &event) {
         }
-    };
-
-    static std::string JET_INPUT_MAP_NAME;
+    }; **/
+    
+	static std::string JET_INPUT_MAP_NAME;
 
     static std::string JET_PREDICTION_MAP_NAME;
 
     
 
-    boost::shared_ptr<HazelcastClient> getJetClient() {
+    std::shared_ptr<hazelcast_client> getJetClient() {
         return jetClient;
     }
 
-    static IMap<std::string, std::string> getJetInputMap() {
-        return jetClient->getMap<std::string, std::string>(JET_INPUT_MAP_NAME);
+    static std::shared_ptr<imap> getJetInputMap() {
+        return jetClient->get_map(JET_INPUT_MAP_NAME).get();
     }
 
-    static IMap<std::string, std::string> getJetPredictionMap() {
-        return jetClient->getMap<std::string, std::string>(JET_PREDICTION_MAP_NAME);
+    static std::shared_ptr<imap> getJetPredictionMap() {
+        return jetClient->get_map(JET_PREDICTION_MAP_NAME).get();
     }
 
     /**
@@ -158,11 +159,11 @@ public:
 
 private:
 
-    static boost::shared_ptr<HazelcastClient> newClient();
+    static std::shared_ptr<hazelcast_client> newClient();
 
-    static boost::shared_ptr<HazelcastClient> jetClient;
+    static std::shared_ptr<hazelcast_client> jetClient;
     
-    static JetListener listener;
+   // static JetListener listener;
 
 
 };
