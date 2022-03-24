@@ -2,12 +2,13 @@ package biz.schr.impl;
 
 import biz.schr.Constants;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.function.ComparatorEx;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.pipeline.*;
 import com.hazelcast.map.listener.EntryAddedListener;
 
@@ -16,19 +17,19 @@ import java.util.AbstractMap;
 public class CollisionDetector {
 
 
-    public static void start(JetInstance jet) {
-        jet.newJob(buildPipeline(), new JobConfig().setName("Collision detector")).join();
-
+    public static void start(HazelcastInstance hz) {
         // Print detected collisions to console for debugging
-        jet.getHazelcastInstance().getMap(Constants.PREDICTION_MAP_NAME).addEntryListener(
+        hz.getMap(Constants.PREDICTION_MAP_NAME).addEntryListener(
                 new CollisionAddedListener(), true);
+
+        hz.getJet().newJob(buildPipeline(), new JobConfig().setName("Collision detector")).join();
     }
 
     private static Pipeline buildPipeline() {
         
         Pipeline p = Pipeline.create();
 
-        p.drawFrom(Sources.<String, String>mapJournal(Constants.INPUT_MAP_NAME, JournalInitialPosition.START_FROM_CURRENT))
+        p.readFrom(Sources.<String, String>mapJournal(Constants.INPUT_MAP_NAME, JournalInitialPosition.START_FROM_CURRENT))
                 .withoutTimestamps().setName("Stream from buffer")
                 .map(e -> VehiclePosition.parse(e)).setName("Parse JSON")
                 .addTimestamps(v -> v.timestamp, 0)
@@ -62,7 +63,7 @@ public class CollisionDetector {
                 // put vehicles to the collision map. Short TTL - the prediction is relevant just before the collision happens
                 .flatMap(l -> Traversers.traverseIterator(l.getValue().iterator() ) )
                 .map( i -> new AbstractMap.SimpleEntry<String,String>(i.getKey(), i.getKey()))
-                .drainTo(Sinks.map(Constants.PREDICTION_MAP_NAME)).setName("Save collisions to IMap");
+                .writeTo(Sinks.map(Constants.PREDICTION_MAP_NAME)).setName("Save collisions to IMap");
 
         return p;
     }

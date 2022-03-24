@@ -1,5 +1,7 @@
 package biz.schr;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import biz.schr.impl.CollisionDetector;
@@ -11,9 +13,9 @@ public class StartCollisionDetector {
 
     public static void main(String[] args) {
 
-        JetInstance jet  = Jet.newJetClient();
+        HazelcastInstance hz  = HazelcastClient.newHazelcastClient();
 
-        CollisionDetector.start(jet);
+        CollisionDetector.start(hz);
 
     }
 

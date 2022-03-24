@@ -8,8 +8,6 @@
 #include "town_map.h"
 #include "town.h"
 #include "townname_func.h"
-// #include <iostream>
-// #include <fstream>
 #include <hazelcast/client/hazelcast_client.h>
 #include <cstddef>
 #include <string>
@@ -39,79 +37,10 @@ bool ShallTrainStop(Vehicle *v);
 class JetResources {
 public:
 
-/*
-    class JetListener : public EntryListener<std::string, std::string> {
-    public:
-        virtual void entryAdded(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
-            std::cout << "Collision detected for vehicle " << event.getKey() << std::endl;
-
-            // Iterate over all trains to find the affected one
-            for (size_t i = 0; i < Vehicle::GetPoolSize(); i++) {
-                Vehicle *v = Vehicle::Get(i);
-                if (v == NULL) { 
-                    continue;
-                } else {
-
-                    if ((!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0)) {
-
-                        std::string name = getVehicleName(v);
-                        if (name == "") {
-                            continue;
-                        }
-                    
-                        if (event.getKey() == name) {
-                            std::cout << "Stopping vehicle " << name << std::endl;                             
-                        
-                            // backup _current_company global; _current_company contains index of the company
-                            Backup<CompanyByte> cur_company(_current_company, FILE_LINE);
-
-                            // get owner company of this vehicle 
-                            Company *c1 = Company::Get(v->owner);
-
-                            // switch to the owner company
-                            cur_company.Change(c1->index);
-
-                            // Issue "stop the train" command
-                            bool dcp = DoCommandP(v->tile, v->index, 0, CMD_START_STOP_VEHICLE, NULL, NULL, false);
-
-                            // restore original company
-                            cur_company.Restore();
-                        }
-                        
-
-                    }
-                }
-            }
-
-        }
-
-        virtual void entryRemoved(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
-        }
-
-        virtual void entryUpdated(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
-        }
-
-        virtual void entryEvicted(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
-        }
-
-        virtual void entryExpired(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
-        }
-
-        virtual void entryMerged(const hazelcast::client::EntryEvent<std::string, std::string> &event) {
-        }
-
-        virtual void mapEvicted(const hazelcast::client::MapEvent &event) {
-        }
-
-        virtual void mapCleared(const hazelcast::client::MapEvent &event) {
-        }
-    }; **/
-    
 	static std::string JET_INPUT_MAP_NAME;
 
     static std::string JET_PREDICTION_MAP_NAME;
 
-    
 
     std::shared_ptr<hazelcast_client> getJetClient() {
         return jetClient;
@@ -162,8 +91,5 @@ private:
     static std::shared_ptr<hazelcast_client> newClient();
 
     static std::shared_ptr<hazelcast_client> jetClient;
-    
-   // static JetListener listener;
-
 
 };

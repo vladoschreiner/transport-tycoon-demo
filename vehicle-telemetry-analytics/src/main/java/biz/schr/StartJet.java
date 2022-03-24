@@ -1,7 +1,10 @@
 package biz.schr;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
@@ -11,20 +14,21 @@ public class StartJet {
 
 
     public static void main(String[] args) {
-        JetConfig jc = JetConfig.loadDefault();
+        Config jc = Config.loadDefault();
 
-        jc.getHazelcastConfig().setProperty("hazelcast.partition.count", "1");
+        jc.getJetConfig().setEnabled(true);
 
-        jc.getHazelcastConfig().addEventJournalConfig( new EventJournalConfig()
-                .setMapName(Constants.INPUT_MAP_NAME)
+        jc.setProperty("hazelcast.partition.count", "1");
+
+        jc.getMapConfig(Constants.INPUT_MAP_NAME)
+          .setEventJournalConfig( new EventJournalConfig()
                 .setEnabled(true)
                 .setCapacity(100_000)
                 .setTimeToLiveSeconds(0));
 
-        jc.getHazelcastConfig().addMapConfig( new MapConfig()
-                .setName(Constants.PREDICTION_MAP_NAME)
-                .setTimeToLiveSeconds(Constants.PREDICTION_TTL_SECS)
-        );
+        jc.addMapConfig( new MapConfig()
+                        .setName(Constants.PREDICTION_MAP_NAME)
+                        .setTimeToLiveSeconds(Constants.PREDICTION_TTL_SECS));
 
         // Uncomment if you want to use Management Center for monitoring
         // Get Management Center from:
@@ -32,7 +36,7 @@ public class StartJet {
         // jc.getMetricsConfig().setEnabled(true).setJmxEnabled(true);
         // jc.getMetricsConfig().setMetricsForDataStructuresEnabled(true);
 
-        JetInstance jet  = Jet.newJetInstance(jc);
+        HazelcastInstance jet = Hazelcast.newHazelcastInstance(jc);
 
         IngestionMonitor.start(jet);
 

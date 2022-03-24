@@ -1,10 +1,14 @@
 # Transport Tycoon Demo
-[OpenTTD](http://openttd.org/) collision prevention using [Hazelcast Jet](https://jet.hazelcast.org).
+[OpenTTD](http://openttd.org/) collision prevention using [Hazelcast](https://hazelcast.com/).
 
 ## About
-OpenTTD (Open Transport Tycoon Deluxe) is an open source simulation game based upon the popular Microprose game "Transport Tycoon Deluxe", written by Chris Sawyer. A player builds his empire by transporting people and material between cities and industries.
+OpenTTD (Open Transport Tycoon Deluxe) is an open source simulation game based upon the popular Microprose game "Transport Tycoon
+Deluxe", written by Chris Sawyer. Players build the transport empire by transporting people and material between cities and
+industries.
 
-This demo extracts real-time vehicle data from OpenTTD and analyses it using [Hazelcast Jet](https://jet.hazelcast.org) data processing engine. The analytical job in Jet predicts train collisions. A pedicted collision information is pushed back to the running OpenTTD game to stop the affected trains (and save lifes:-).
+This demo extracts real-time vehicle data from OpenTTD and analyses it using the [Jet engine](https://docs.hazelcast.com/hazelcast/5.1/pipelines/overview#what-is-the-jet-engine)
+data processing engine. The Jet application predicts train collisions. The predicted collision is pushed back to the running
+OpenTTD game to stop the affected trains (and save lifes:-).
 
 A goal is to demonstrate the possibilities of an in-memory streaming for a real-time (sub-second) processing on a large data streams.
 
@@ -14,9 +18,13 @@ Watch a [demo recording](https://www.youtube.com/watch?v=2RlmCZhhjMY)
 
 ## Architecture
 
-The source code of OpenTTD was changed to export vehicle position data. This approach was inspired by [Using OpenTTD to create a realistic data stream](https://www.experts-exchange.com/articles/31095/Using-OpenTTD-to-create-a-realistic-data-stream.html) blog. For each vehicle, the changed game code exports a JSON record with the telemetry approximatelly 30x per second.
+The source code of OpenTTD was changed to stream out the vehicle position data and receive back the predicted collisions. 
+This approach was inspired by
+[Using OpenTTD to create a realistic data stream](https://www.experts-exchange.com/articles/31095/Using-OpenTTD-to-create-a-realistic-data-stream.html)
+blog. 
 
-JSON record example:
+For each in-game vehicle, it's position update is sent to Hazelcast approximately 30x per second.  Position updates are serialized
+as JSON messages. See an example:
 
 ```
 
@@ -30,36 +38,41 @@ JSON record example:
 
 ```
 
-The position records are sent to a the Hazelcast Jet cluster to be analysed. In-memory data structures of Hazelcast Jet are used for reliable low-latency messaging. OpenTTD is implemented in C++ and Hazelcast comes with C++ client. This allows a straightforward data extraction.
+The position records are sent to Hazelcast cluster using Hazelcast messaging services ([EventJournal](https://docs.hazelcast.com/hazelcast/5.1/data-structures/event-journal)).
 
-The message buffer is consumed by the analytical job residing in the Hazelcast Jet cluster. The analytical job observes the position updates for each vehicle. It predicts the vehicle position in next second based on a vehicle position one second ago and a vehicle position now (it simply extends it's motion vector). Collision is predicted if there is an intersection between two or more vectors. 
+Hazelcast hosts a collision prediction job that is subscribed to the messaging service. It predicts the vehicle position by 
+extendig the vehicle motion vector. In simple terms: the vehicle is expected to keep the direction and speed it carried from
+now - 1 second to now. Collision is predicted if there is an intersection between two or more vectors. 
 
 ![Prediction visualised](/images/prediction.png)
 
-This happens each 50 milliseconds. Higher resolution isn't possible as the frequency of the vehicle data is just 30 Hz (vehicle position update arrives each 30-40 millisecond for each vehicle).
+This happens every 50 milliseconds. Higher resolution isn't possible due to the game speed (~30 game loops per second).
 
-The analytical job is implemented using the [Pipeline API](https://docs.hazelcast.org/docs/jet/latest/manual/#pipeline-api) of Hazelcast Jet (see [the code](../../blob/master/vehicle-telemetry-analytics/src/main/java/biz/schr/impl/CollisionDetector.java#L37)).
+The collision prediction job is implemented using the [Pipeline API](https://docs.hazelcast.com/hazelcast/5.1/pipelines/overview)
+of the Jet engine (see [the code](../../blob/master/vehicle-telemetry-analytics/src/main/java/biz/schr/impl/CollisionDetector.java#L37)).
 
-If a collision is detected, it's recorded to a K-V store in Hazelcast Jet. This store allows an event-driven programming. Storing new collision triggers an event that is delivered to the C++ client in OpenTTD. OpenTTD can stop the affected vehicles.
+Any predicted collision is stored to a [Key-Value store](https://docs.hazelcast.com/hazelcast/5.1/data-structures/map) in
+Hazelcast. This also generates an event that gets delivered to the Hazelcast client running in the game. The event handler stops
+affected vehicles using the OpenTTD API.
 
 ![Pipeline](/images/pipeline.png)
 
 ## Performance
 
-TODO: 
+The in-game code uses async Hazelcast APIs to avoid negative impact on game performance.
 
-In-memory approach to meet the low-latency requirements (collision detection + train stop duration must happen within 1 second - prediction forecast interval). Possible thanks to combining in-mem messaging, processing, event-driven programming. 
+The server-side components benefit from the low-latency architecture of Hazelcast for both messaging and compute. As a result,
+the whole prediction cycle takes just a few milliseconds to complete (mostly network-bound) giving enough headroom to stop the
+running trains.
 
-Scaling to handle millions of events per second to support many game instances 
-
-Fault-tolerance using in-memory replication.
-
+Server-side components are straightforward to scale to handle millions of events per second to support many game instances
 
 ## Structure
 
-`openttd` directory contains a fork of OpenTTD 1.9.2 source code extended with Hazelcast 3.11 C++ client to export the data and handle the collision events. See the `openttd/src/log_events.h` and `openttd/src/log_events.cpp` for the Hazelcast integration.
+`openttd` directory contains a fork of OpenTTD 1.9.2 source code extended routines to export the data and handle the collision
+events. See the `openttd/src/log_events.h` and `openttd/src/log_events.cpp` for the Hazelcast integration.
 
-`vehicle-telemetry-analytics` contains the messaging and the analytical infrastructure: input message buffer, stream processing cluster with the analytical job, K-V store for the detected collisions
+`vehicle-telemetry-analytics` contains the messaging and the analytical infrastructure.
 
 `game-positions` contains the saved OpenTTD game positions that can be used for a demonstration
 
@@ -68,6 +81,7 @@ Fault-tolerance using in-memory replication.
 
 * Java Development Kit 8+: [Installation Guide](https://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html)
 * Apache Maven: [Installation Guide](https://maven.apache.org/install.html)
+* Hazelcast C++ client: [Installation Guide](https://github.com/hazelcast/hazelcast-cpp-client/blob/v5.0.0/Reference_Manual.md#11-installing)
 
 Prerequisites of OpenTTD are covered in next section.
 
@@ -98,6 +112,9 @@ Start OpenTTD:
 cd openttd/bin
 ./openttd
 ```
+
+Note for MacOS users: If starting the `openttd` binary fails, try building a Mac OS app bundle by running `make bundle` and start
+the game by launching `OpenTTD` from the `bundle` folder and allow the app to access the Documents folder. 
 
 Load the game position from `game-positions/demo1.sav`. Start all deployed trains by hitting the green flag from the train overview window and see the tragedy.
 
