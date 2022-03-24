@@ -1527,8 +1527,8 @@ make_cflags_and_ldflags() {
 
 	# Vlado: adding Hazelcast client
 	HZL_PWD="`pwd`"
-	CFLAGS="$CFLAGS -I$HZL_PWD/hazelcast-cpp/Mac_64/external/include -I$HZL_PWD/hazelcast-cpp/Mac_64/hazelcast/include"
-	LDFLAGS="$LDFLAGS $HZL_PWD/hazelcast-cpp/Mac_64/hazelcast/lib/libHazelcastClient3.11_64.a"
+	CFLAGS="$CFLAGS -std=c++11 -DBOOST_THREAD_VERSION=5"
+	LDFLAGS="$LDFLAGS -DBOOST_THREAD_VERSION=5 -lhazelcast-cpp-client -lboost_thread -lboost_chrono"
 	
 	echo "Hazelcast added to CFLAGS: $CFLAGS"
 	echo "Hazelcast added to LDFLAGS: $LDFLAGS"

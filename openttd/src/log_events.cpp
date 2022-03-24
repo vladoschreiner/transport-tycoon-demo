@@ -11,31 +11,99 @@
 #include <cstddef>
 #include "log_events.h"
 #include <ctime>
-#include <hazelcast/client/HazelcastClient.h>
+#include <hazelcast/client/hazelcast_client.h>
 #include "map_func.h"
 #include <chrono>
 
 using namespace hazelcast::client;
 using namespace hazelcast::util;
 
+hazelcast::client::entry_listener make_hz_listener() {
+    return hazelcast::client::entry_listener()
+        .on_added([](hazelcast::client::entry_event &&event) {
 
+        	// std::cout << "Collision detected for vehicle " << event.getKey() << std::endl;
+
+            // Iterate over all trains to find the affected one
+            for (size_t i = 0; i < Vehicle::GetPoolSize(); i++) {
+                Vehicle *v = Vehicle::Get(i);
+                if (v == NULL) { 
+                    continue;
+                } else {
+
+                    if ((!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0)) {
+
+                        std::string name = JetResources::getVehicleName(v);
+                        if (name == "") {
+                            continue;
+                        }
+                    
+                        if (event.get_key().get<std::string>().value() == name) {
+                            //std::cout << "Stopping vehicle " << name << std::endl;                             
+                        
+                            // backup _current_company global; _current_company contains index of the company
+                            Backup<CompanyByte> cur_company(_current_company, FILE_LINE);
+
+                            // get owner company of this vehicle 
+                            Company *c1 = Company::Get(v->owner);
+
+                            // switch to the owner company
+                            cur_company.Change(c1->index);
+
+                            // Issue "stop the train" command
+                            bool dcp = DoCommandP(v->tile, v->index, 0, CMD_START_STOP_VEHICLE, NULL, NULL, false);
+
+                            // restore original company
+                            cur_company.Restore();
+                        }
+                        
+
+                    }
+                }
+            }
+        })
+        .on_removed([](hazelcast::client::entry_event &&event) {
+            //std::cout << "[removed] " << event << std::endl;
+        })
+        .on_updated([](hazelcast::client::entry_event &&event) {
+            //std::cout << "[added] " << event << std::endl;
+        })
+        .on_evicted([](hazelcast::client::entry_event &&event) {
+            //std::cout << "[updated] " << event << std::endl;
+        })
+        .on_expired([](hazelcast::client::entry_event &&event) {
+            //std::cout << "[expired] " << event << std::endl;
+        })
+        .on_merged([](hazelcast::client::entry_event &&event) {
+            //std::cout << "[merged] " << event << std::endl;
+        })
+        .on_map_evicted([](hazelcast::client::map_event &&event) {
+            //std::cout << "[map_evicted] " << event << std::endl;
+        })
+        .on_map_cleared([](hazelcast::client::map_event &&event) {
+            //std::cout << "[map_cleared] " << event << std::endl;
+        });
+}
 
 /**
  * Initiates position to Hazelcast cluster using Hazelcast C++ client
  * @See https://github.com/hazelcast/hazelcast-cpp-client
  */
-boost::shared_ptr<HazelcastClient> JetResources::newClient() {
+std::shared_ptr<hazelcast_client> JetResources::newClient() {
 
-    ClientConfig config;
-    config.getGroupConfig().setName("jet");
-    config.getGroupConfig().setPassword("jet-pass");
+    client_config config;
+    config.set_cluster_name("dev");
+    
+    auto client = make_shared<hazelcast_client>(hazelcast::new_client(std::move(config)).get());
 
-    boost::shared_ptr<HazelcastClient> client(new HazelcastClient(config));
-    IMap<std::string, std::string> map = client->getMap<std::string, std::string>(JET_PREDICTION_MAP_NAME);
-    map.addEntryListener(listener, true);
+	auto map = client->get_map(JET_PREDICTION_MAP_NAME).get();
+    map->add_entry_listener(make_hz_listener(), true).get();
 
     return client;
 }
+
+
+
 
 /**
  * Name of the remote data structure used for input. 
@@ -50,17 +118,14 @@ std::string JetResources::JET_INPUT_MAP_NAME("openttd-events");
  */
 std::string JetResources::JET_PREDICTION_MAP_NAME("openttd-predictions");
 
-boost::shared_ptr<HazelcastClient> JetResources::jetClient = JetResources::newClient();
-JetResources::JetListener JetResources::listener;
-
-
+std::shared_ptr<hazelcast_client> JetResources::jetClient = JetResources::newClient();
 
 
 /**
  * Sends the current position of the vehicle to remote storage
  */ 
 bool LogVehicleEvent(Vehicle *v) {
-	
+
 	int x_pos = v->x_pos;
 	int y_pos = v->y_pos;
 	unsigned __int64 now = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
@@ -79,8 +144,8 @@ bool LogVehicleEvent(Vehicle *v) {
 	message = message + "}";
 
 	// Stream message to Hazelcast Jet server
-	IMap<std::string, std::string> jetMap = JetResources::getJetInputMap();
-	jetMap.put(name, message);	
+	auto jetMap = JetResources::getJetInputMap();
+	jetMap->put<std::string, std::string>(name, message).get();
 
 	return true;
 
